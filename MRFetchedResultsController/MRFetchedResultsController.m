@@ -250,7 +250,6 @@ static NSCache *__cache = nil;
 {
     NSParameterAssert(fetchRequest);
     NSParameterAssert(fetchRequest.sortDescriptors.count > 0);
-    NSParameterAssert(sectionNameKeyPath == nil || [[fetchRequest.sortDescriptors.firstObject key] isEqualToString:sectionNameKeyPath]);
     NSArray *const sortDescriptors = fetchRequest.sortDescriptors;
     if (sortDescriptors.count == 0) {
         if (sectionNameKeyPath) {
@@ -724,7 +723,15 @@ static NSCache *__cache = nil;
     NSPredicate *const entityPredicate = [self mr_buildEntityPredicateForFetchRequest:fetchRequest];
     NSSet *const deletedObjects = [userInfo[NSDeletedObjectsKey] filteredSetUsingPredicate:entityPredicate];
     NSSet *const insertedObjects = [userInfo[NSInsertedObjectsKey] filteredSetUsingPredicate:entityPredicate];
-    NSSet *const updatedObjects = [userInfo[NSUpdatedObjectsKey] filteredSetUsingPredicate:entityPredicate];
+    NSSet *refreshed = [userInfo[NSRefreshedObjectsKey] filteredSetUsingPredicate:entityPredicate];
+    NSSet *updated = [userInfo[NSRefreshedObjectsKey] filteredSetUsingPredicate:entityPredicate];
+    if(!refreshed) {
+        refreshed = NSSet.set;
+    }
+    if(!updated) {
+        updated = NSSet.set;
+    }
+    NSSet *const updatedObjects = [refreshed setByAddingObjectsFromSet:updated];
     if (self.applyFetchedObjectsChanges) {
         [self mr_applyChangesWithDeletedObjects:deletedObjects
                                 insertedObjects:insertedObjects
